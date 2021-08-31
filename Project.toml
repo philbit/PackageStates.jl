@@ -1,0 +1,4 @@
+name = "CodePath"
+uuid = "412cc100-f440-45a8-9ec7-153ed5111422"
+authors = ["Philip Bittihn <philip.bittihn@ds.mpg.de>"]
+version = "0.1.0"
