@@ -1,8 +1,8 @@
 name = "PackageVersions"
 uuid = "412cc100-f440-45a8-9ec7-153ed5111422"
-authors = ["Philip Bittihn <philip@bittihn.de>"]
 license = "MIT"
 desc = "Package version tracking."
+authors = ["Philip Bittihn <philip@bittihn.de>"]
 version = "0.1.0"
 
 [deps]
