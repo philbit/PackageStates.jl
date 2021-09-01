@@ -1,4 +1,10 @@
-name = "CodePath"
+name = "PackageVersions"
 uuid = "412cc100-f440-45a8-9ec7-153ed5111422"
-authors = ["Philip Bittihn <philip.bittihn@ds.mpg.de>"]
+authors = ["Philip Bittihn <philip@bittihn.de>"]
+license = "MIT"
+desc = "Package version tracking."
 version = "0.1.0"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
