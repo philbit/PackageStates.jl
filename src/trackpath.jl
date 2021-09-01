@@ -1,8 +1,8 @@
 
 Base.@kwdef struct PackageState
-    pkgdir::String
-    pkgid::Base.PkgId
-    pkgproject::Union{Nothing,String}
+    dir::String
+    id::Base.PkgId
+    project::Union{Nothing,String}
     timestamp::DateTime
     load_path::Vector{String}
     tree_hash::String
@@ -20,9 +20,9 @@ function current_package_state(pkg::Base.PkgId)
     th = tree_hash_fmt(d)
     project, mth = project_and_tree_hash(pkg)
     return PackageState(
-            pkgdir = d,
-            pkgid = pkg,
-            pkgproject = project,
+            dir = d,
+            id = pkg,
+            project = project,
             timestamp = date,
             load_path = Base.load_path(),
             tree_hash = th,
