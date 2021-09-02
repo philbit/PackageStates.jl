@@ -3,7 +3,6 @@ Base.@kwdef struct PackageState
     dir::String
     id::Base.PkgId
     project::Union{Nothing,String}
-    timestamp::DateTime
     load_path::Vector{String}
     tree_hash::String
     manifest_tree_hash::Union{Nothing,String}
@@ -19,17 +18,16 @@ function current_package_state(pkg::Base.PkgId)
     d = pkgdir(m)
     th = tree_hash_fmt(d)
     project, mth = project_and_tree_hash(pkg)
-    return PackageState(
+    return date => PackageState(
             dir = d,
             id = pkg,
             project = project,
-            timestamp = date,
             load_path = Base.load_path(),
             tree_hash = th,
             manifest_tree_hash = mth)
 end
 
-module_states = Dict{Module, Vector{PackageState}}()
+module_states = Dict{Module, Vector{Pair{DateTime,PackageState}}}()
 
 function on_load_package(pkg::Base.PkgId)
     m = Base.root_module(pkg)
