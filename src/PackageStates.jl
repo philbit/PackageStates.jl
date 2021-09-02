@@ -1,4 +1,4 @@
-module PackageVersions
+module PackageStates
 
 using Pkg
 using Dates
