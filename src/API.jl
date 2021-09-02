@@ -5,8 +5,10 @@ IntegerOrSymbol = Union{Integer, Symbol}
 get_state_on_load(m::Module) = get_state_on_load(m::Module, nothing)
 get_state_on_load(m::Module, prop::Union{Nothing,Symbol}) = get_state(m, prop, :on_load)
 
-get_state(m::Module, idx = :current) = get_state(m, nothing, idx)
-function get_state(m::Module, prop::Union{Nothing,Symbol}, idx = :current)
+get_state_complete(m::Module, idx::IntegerOrSymbol = :current) = get_state(m, nothing, idx)
+
+# General function to get whole state or specific property
+function get_state(m::Module, prop::Union{Nothing,Symbol} = nothing, idx::IntegerOrSymbol = :current)
     prop !== nothing && !hasfield(PackageState, prop) && error("Can only get properties ", fieldnames(PackageState))
     !haskey(module_states, m) && error("Code state of module ", m, " not tracked")
     idx isa Integer && 0 < length(module_states[m]) < idx && error("Module ", m, " does not have ", idx, " states")
