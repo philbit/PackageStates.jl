@@ -1,6 +1,6 @@
 tree_hash_fmt(d) = bytes2hex(Pkg.GitTools.tree_hash(d))
 
-EMPTY_TREE_HASH = "none"
+EMPTY_TREE_HASH = "none (package dev'ed)"
 
 function project_and_tree_hash(pkg::Base.PkgId)
     for env in Base.load_path()
