@@ -33,3 +33,8 @@ function on_load_package(pkg::Base.PkgId)
     m = Base.root_module(pkg)
     push!(module_states, m => [current_package_state(pkg)])
 end
+
+idxstates(m::Module, ::Val{i}) where {i<:Integer} = module_states[m][i]
+idxstates(m::Module, ::Val{:on_load}) = first(module_states[m])
+idxstates(m::Module, ::Val{:newest}) = last(module_states[m])
+idxstates(m::Module, ::Val{:current}) = current_package_state(m)
