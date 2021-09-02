@@ -34,7 +34,10 @@ function on_load_package(pkg::Base.PkgId)
     push!(module_states, m => [current_package_state(pkg)])
 end
 
-idxstates(m::Module, ::Val{i}) where {i<:Integer} = module_states[m][i]
+function idxstates(m::Module, ::Val{i}) where {i} 
+    @assert(i isa Integer, "State index must be an integer or :on_load, :newest, :current")
+    return module_states[m][i]
+end
 idxstates(m::Module, ::Val{:on_load}) = first(module_states[m])
 idxstates(m::Module, ::Val{:newest}) = last(module_states[m])
 idxstates(m::Module, ::Val{:current}) = current_package_state(m)
