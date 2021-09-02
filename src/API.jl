@@ -1,4 +1,5 @@
 export get_state, get_state_on_load, diff_state, diff_all_states
+export PackageState
 
 IntegerOrSymbol = Union{Integer, Symbol}
 
