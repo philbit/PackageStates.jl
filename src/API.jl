@@ -11,7 +11,7 @@ get_state_complete(m::Module, idx::IntegerOrSymbol = :current) = get_state(m, no
 function get_state(m::Module, prop::Union{Nothing,Symbol} = nothing, idx::IntegerOrSymbol = :current)
     prop !== nothing && !hasfield(PackageState, prop) && error("Can only get properties ", fieldnames(PackageState))
     !haskey(module_states, m) && error("Code state of module ", m, " not tracked")
-    idx isa Integer && 0 < length(module_states[m]) < idx && error("Module ", m, " does not have ", idx, " states")
+    idx isa Integer && (idx <= 0 || length(module_states[m]) < idx) && error("Index ", idx, " for module ", m, " is invalid")
     return prop !== nothing ? getfield(idxstates(m, Val(idx)), prop) : idxstates(m, Val(idx))
 end
 
