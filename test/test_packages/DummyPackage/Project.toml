@@ -1,0 +1,4 @@
+name = "DummyPackage"
+uuid = "a5a70863-7a97-4c01-857e-744174fcb92d"
+authors = ["Philip Bittihn <philip@bittihn.de>"]
+version = "0.1.0"
