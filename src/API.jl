@@ -36,8 +36,10 @@ function diff_state(m::Module, fromto::Pair{T1,T2} = (:on_load => :current); pri
         fromval = getfield(fromstate[2], field)
         toval = getfield(tostate[2], field)
         if fromval != toval
-            !differencefound && printheader()
-            println("  ", field, ": ", fromval, " -> ", toval)
+            if print
+                !differencefound && printheader()
+                println("  ", field, ": ", fromval, " -> ", toval)
+            end
             differencefound = true
         end
     end
