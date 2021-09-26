@@ -5,8 +5,7 @@ using Dates
 using PrettyTables
 
 include("utils.jl")
-include("trackpath.jl")
-include("reviseinteraction.jl")
+include("core.jl")
 include("API.jl")
 
 function __init__()
