@@ -9,6 +9,35 @@ Base.@kwdef struct PackageState
     manifest_tree_hash::Union{Nothing,String}
 end
 
+const row_names = ["Timestamp",
+                   "Active project",
+                   "Load path",
+                   "Source path",
+                   "Tree hash",
+                   "Manifest t.h."]
+
+function tabledata(s::PackageState)
+    data = [Dates.format(s.timestamp, "yyyy-mm-dd HH:MM"),
+            s.project,
+            s.load_path,
+            s.dir,
+            s.tree_hash,
+            s.manifest_tree_hash]
+    return data
+end
+
+printtable(states::Vararg{PackageState, N}; kwargs...) where N = printtable(tabledata.(states)...; kwargs...)
+function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
+    println()
+    pretty_table(hcat(datavectors...),
+                 row_names = row_names,
+                 autowrap = true,
+                 linebreaks = true,
+                 columns_width = (displaysize(stdout)[2]-22)÷N,
+                 alignment = :l,
+                 noheader = true; kwargs...)
+end
+
 current_package_state(m::Module) = current_package_state(Base.root_module_key(m))
 function current_package_state(pkg::Base.PkgId)
     date = now()
@@ -50,12 +79,4 @@ idxstates(m::Module, ::Val{:current}) = current_package_state(m)
 Base.show(io::IO, s::PackageState) = print(io, "PackageState($(s.id))")
 
 # fancy multi-line output
-Base.show(io::IO, ::MIME"text/plain", s::PackageState) = print(io,
-    """
-        PackageState of $(s.id)
-               Timestamp: $(Dates.format(s.timestamp, "yyyy-mm-dd HH:MM"))
-                    Path: $(s.dir)
-          Active project: $(s.project)
-               Load path: $(s.load_path)
-               Tree hash: $(s.tree_hash)
-           Manifest t.h.: $(s.manifest_tree_hash)""")
+Base.show(io::IO, ::MIME"text/plain", s::PackageState) = printtable(s; title = "PackageState of $(s.id)")

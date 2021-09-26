@@ -2,6 +2,7 @@ module PackageStates
 
 using Pkg
 using Dates
+using PrettyTables
 
 include("utils.jl")
 include("trackpath.jl")
