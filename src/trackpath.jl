@@ -1,5 +1,6 @@
 
 Base.@kwdef struct PackageState
+    timestamp::DateTime
     dir::String
     id::Base.PkgId
     project::Union{Nothing,String}
@@ -18,7 +19,8 @@ function current_package_state(pkg::Base.PkgId)
     d = pkgdir(m)
     th = tree_hash_fmt(d)
     project, mth = project_and_tree_hash(pkg)
-    return date => PackageState(
+    return PackageState(
+            timestamp = date,
             dir = d,
             id = pkg,
             project = project,
@@ -27,7 +29,7 @@ function current_package_state(pkg::Base.PkgId)
             manifest_tree_hash = mth)
 end
 
-module_states = Dict{Module, Vector{Pair{DateTime,PackageState}}}()
+module_states = Dict{Module, Vector{PackageState}}()
 
 function on_load_package(pkg::Base.PkgId)
     m = Base.root_module(pkg)
@@ -41,3 +43,19 @@ end
 idxstates(m::Module, ::Val{:on_load}) = first(module_states[m])
 idxstates(m::Module, ::Val{:newest}) = last(module_states[m])
 idxstates(m::Module, ::Val{:current}) = current_package_state(m)
+
+## Pretty printing
+
+# one-line text output
+Base.show(io::IO, s::PackageState) = print(io, "PackageState($(s.id))")
+
+# fancy multi-line output
+Base.show(io::IO, ::MIME"text/plain", s::PackageState) = print(io,
+    """
+        PackageState of $(s.id)
+               Timestamp: $(Dates.format(s.timestamp, "yyyy-mm-dd HH:MM"))
+                    Path: $(s.dir)
+          Active project: $(s.project)
+               Load path: $(s.load_path)
+               Tree hash: $(s.tree_hash)
+           Manifest t.h.: $(s.manifest_tree_hash)""")

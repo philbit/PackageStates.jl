@@ -13,9 +13,9 @@ get_state_complete(m::Module, idx::IntegerOrSymbol = :current) = get_state(m, no
 # General function to get whole state or specific property
 function get_state(m::Module, prop::Union{Nothing,Symbol} = nothing, idx::IntegerOrSymbol = :current)
     prop !== nothing && !hasfield(PackageState, prop) && error("Can only get properties ", fieldnames(PackageState))
-    !haskey(module_states, m) && error("Code state of module ", m, " not tracked")
+    !haskey(module_states, m) && error("State of module ", m, " not tracked")
     idx isa Integer && (idx <= 0 || length(module_states[m]) < idx) && error("Index ", idx, " for module ", m, " is invalid")
-    return prop !== nothing ? getfield(idxstates(m, Val(idx))[2], prop) : idxstates(m, Val(idx))
+    return prop !== nothing ? getfield(idxstates(m, Val(idx)), prop) : idxstates(m, Val(idx))
 end
 
 function diff_all_states(fromto::Pair{T1,T2} = (:on_load => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
@@ -31,12 +31,13 @@ function diff_state(m::Module, fromto::Pair{T1,T2} = (:on_load => :current); pri
     differencefound = false
     function printheader()
         println(m)
-        println(fromto[1], " (", fromstate[1], ") -> ", fromto[2], " (", tostate[1], ")")
+        println(fromto[1], " (", fromstate.timestamp, ") -> ", fromto[2], " (", tostate.timestamp, ")")
     end
 
     for field in fieldnames(PackageState)
-        fromval = getfield(fromstate[2], field)
-        toval = getfield(tostate[2], field)
+        field == :timestamp && continue
+        fromval = getfield(fromstate, field)
+        toval = getfield(tostate, field)
         if fromval != toval
             if print
                 !differencefound && printheader()
