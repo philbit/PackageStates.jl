@@ -3,11 +3,11 @@
 
 # PackageStates.jl
 
-In Julia, environments/projects are an efficient way to preserve the exact environment in which code was run, i.e. the versions of all packages. For computational/numerical code, this can ensure reproducibility. However, relying heavily on environments comes at a cost: If your workflow involves frequent switching between different projects, the version of loaded packages depends on when exactly the corresponding `using` directive was issued. This can lead to hard-to-debug situations of "wrong" verions being loaded, for example when environment switching is done programmatically and packages are implicitly loaded as dependencies. Wouldn't it be nice to have tool to check which environment was active when a package was loaded and which exact version of the code the loaded version actually corresponds to? This is the purpose of `PackageStates.jl`. In short, it allows you to record and compare the versions of loaded packages and their desired versions in different environments.
+In Julia, environments/projects are an efficient way to preserve the exact environment in which code was run, i.e. the versions of all packages. For computational/numerical code, this can ensure reproducibility. However, relying heavily on environments comes at a cost: If your workflow involves frequent switching between different projects, the version of loaded packages depends on when exactly the corresponding `using` directive was issued. This can lead to hard-to-debug situations of "wrong" verions being loaded, for example when environment switching is done programmatically and packages are implicitly loaded as dependencies. Wouldn't it be nice to have a tool to check which environment was active when a package was loaded and which exact version of the code the loaded version actually corresponds to? This is the purpose of `PackageStates.jl`. In short, it allows you to record and compare the versions of loaded packages and their desired versions in different environments.
 
 ## Disclaimer
 
-Beyond this README, the documentation/docstrings are currently largely missing. This is the next important to-do item, but the currently functionality also does not exceed the examples below by a lot.
+Beyond this README, the documentation/docstrings are currently largely missing. This is the next important to-do item, but the current functionality also does not exceed the examples below by a lot.
 
 ## Usage tips
 Consider adding `PackageStates.jl` to your default `@v1.X` environment, so it is always available even if you `Pkg.activate` a different environment. Adding it to your `startup.jl` can ensure it is always loaded before any other packages are loaded and can record away.
@@ -146,7 +146,7 @@ PackageState of JLD2 [033835bb-8acc-5ee8-8aae-3f567f8a3819]
 ```
 This way, we can find out in retrospect in what environment which version of a package was loaded. Other possibilities are `:current` (the default) and `:newest` which corresponds to the newest recorded state, or an integer index refering to the states in the order they were recorded. Currently, the only automatic recording happens at load time of a package, so unless recording is triggered manually (see State diffing below), the two will be identical.
 
-The great power of this simple "record keeping" is that it also works for implicitly loaded packages (as dependencies of other packages). You may be familiar with the warning message after `Pkg.add`ing and precompiling a package, if a different version of the same package is already loaded. However, no such warning is issued when simply `using` a package in an environment that requests a different version of the one already loaded. For example, if we now use Requires.jl in the current environment and wonder why we do not get the newest version, we can see that the loaded version is different from the one requested in the project:
+The great power of this simple "record keeping" is that it also works for implicitly loaded packages (as dependencies of other packages). You may be familiar with the warning message after `Pkg.add`ing and precompiling a package, if a different version of the same package is already loaded. However, no such warning is issued when simply `using` a package in an environment that requests a different version of the one already loaded. For example, if we now use Requires.jl in the current environment, we can see that the loaded version is different from the one requested in the project:
 
 ```julia
 julia> using Requires
@@ -186,7 +186,7 @@ PackageState of Requires [ae029012-a4dd-5104-9daa-d747884805df]
 └───────────────┴────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-We see that the source was not modified, but a different version was actually loaded in the `env_old` environment (as a dependency of JLD2).
+We see that the source was not modified, but that this version was loaded in the `env_old` environment (as a dependency of JLD2), where it corresponded exactly to the requested version.
 
 ## State diffing
 Besides `recorded_modules` and `state`, there are convenience functions to compare states:
