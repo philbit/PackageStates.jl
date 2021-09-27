@@ -1,12 +1,12 @@
 
 Base.@kwdef struct PackageState
     timestamp::DateTime
-    dir::String
-    id::Base.PkgId
-    project::Union{Nothing,String}
     load_path::Vector{String}
+    id::Base.PkgId
+    dir::String
     tree_hash::String
     manifest_tree_hash::Union{Nothing,String}
+    project::Union{Nothing,String}
 end
 
 function Base.:(==)(s1::PackageState, s2::PackageState)
@@ -19,21 +19,21 @@ function Base.:(==)(s1::PackageState, s2::PackageState)
 end
 
 const row_names = ["Timestamp",
-                   "Active project",
                    "Load path",
                    "Package ID",
                    "Source path",
                    "Tree hash",
-                   "Manifest t.h."]
+                   "Manifest t.h.",
+                   "Project"]
 
 function tabledata(s::PackageState)
     data = [Dates.format(s.timestamp, "yyyy-mm-dd HH:MM"),
-            s.project,
             s.load_path,
             s.id,
             s.dir,
             s.tree_hash,
-            s.manifest_tree_hash]
+            s.manifest_tree_hash,
+            s.project]
     return data
 end
 
@@ -49,7 +49,7 @@ function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
                  row_names = row_names,
                  autowrap = true,
                  linebreaks = true,
-                 columns_width = min((displaysize(stdout)[2]-19-3*N)÷N,100*N),
+                 columns_width = min((displaysize(stdout)[2]-18-3*N)÷N,100*N),
                  alignment = :l,
                  noheader = N == 1,
                  highlighters = highlighters; kwargs...)
