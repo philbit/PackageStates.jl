@@ -16,7 +16,7 @@ function mkdummypackage(tmpdir, name)
     return targetdir
 end
 
-remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(1,3:end)], "\n")
+remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(2,4:end)], "\n")
 
 @testset "Basics" begin
     mktempdir() do tmp
@@ -52,6 +52,7 @@ remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(1,3:end)], 
         @test @capture_out(diff_all_states(:on_load => :newest)) == ""
         @test get_state(DummyPackage, :manifest_tree_hash, :newest) == th1
 
+        @test diff_state(DummyPackage, print = false)
         @test remove_dateline_from_diff(@capture_out(diff_state(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_state(DummyPackage, :on_load => :current)))
         
         diff_all_states(print = false, update = true)
@@ -60,11 +61,6 @@ remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(1,3:end)], 
         @test remove_dateline_from_diff(@capture_out(diff_state(DummyPackage, :on_load => :newest))) == remove_dateline_from_diff(@capture_out(diff_state(DummyPackage, :on_load => :current)))
 
         Pkg.activate(env1)
-        changed = split(@capture_out(diff_all_states()), "\n")
-        @test changed[1] == "PackageStates"
-        @test changed[3][1:12] == "  load_path:"
-        @test length(changed) == 4
-        
-
+        @test diff_all_states(print=false) == [PackageStates]
     end
 end

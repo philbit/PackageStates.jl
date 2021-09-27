@@ -9,9 +9,19 @@ Base.@kwdef struct PackageState
     manifest_tree_hash::Union{Nothing,String}
 end
 
+function Base.:(==)(s1::PackageState, s2::PackageState)
+    s1.dir == s2.dir && 
+    s1.id == s2.id &&
+    s1.project == s2.project &&
+    s1.load_path == s2.load_path &&
+    s1.tree_hash == s2.tree_hash &&
+    s1.manifest_tree_hash == s2.manifest_tree_hash
+end
+
 const row_names = ["Timestamp",
                    "Active project",
                    "Load path",
+                   "Package ID",
                    "Source path",
                    "Tree hash",
                    "Manifest t.h."]
@@ -20,6 +30,7 @@ function tabledata(s::PackageState)
     data = [Dates.format(s.timestamp, "yyyy-mm-dd HH:MM"),
             s.project,
             s.load_path,
+            s.id,
             s.dir,
             s.tree_hash,
             s.manifest_tree_hash]
@@ -29,13 +40,19 @@ end
 printtable(states::Vararg{PackageState, N}; kwargs...) where N = printtable(tabledata.(states)...; kwargs...)
 function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
     println()
+    highlighters = ()
+    if N > 1
+        highlighters = ( Highlighter(  (data, i, j) -> (i > 1) && length(unique(data[i,:]))> 1,
+                                        crayon"fg:red"),)
+    end
     pretty_table(hcat(datavectors...),
                  row_names = row_names,
                  autowrap = true,
                  linebreaks = true,
-                 columns_width = (displaysize(stdout)[2]-22)÷N,
+                 columns_width = min((displaysize(stdout)[2]-19-3*N)÷N,100*N),
                  alignment = :l,
-                 noheader = true; kwargs...)
+                 noheader = N == 1,
+                 highlighters = highlighters; kwargs...)
 end
 
 current_package_state(m::Module) = current_package_state(Base.root_module_key(m))

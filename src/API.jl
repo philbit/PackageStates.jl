@@ -19,33 +19,22 @@ function get_state(m::Module, prop::Union{Nothing,Symbol} = nothing, idx::Intege
 end
 
 function diff_all_states(fromto::Pair{T1,T2} = (:on_load => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
+    mods = Module[]
     for (mod, states) in module_states
-        diff_state(mod, fromto; print = print, update = update)
+        if diff_state(mod, fromto; print = print, update = update)
+            push!(mods, mod)
+        end
     end
+    return mods
 end
 
 function diff_state(m::Module, fromto::Pair{T1,T2} = (:on_load => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
     fromstate = idxstates(m, Val(fromto[1]))
     tostate = idxstates(m, Val(fromto[2]))
 
-    differencefound = false
-    function printheader()
-        println(m)
-        println(fromto[1], " (", fromstate.timestamp, ") -> ", fromto[2], " (", tostate.timestamp, ")")
-    end
+    differencefound = fromstate ≠ tostate
 
-    for field in fieldnames(PackageState)
-        field == :timestamp && continue
-        fromval = getfield(fromstate, field)
-        toval = getfield(tostate, field)
-        if fromval != toval
-            if print
-                !differencefound && printheader()
-                println("  ", field, ": ", fromval, " -> ", toval)
-            end
-            differencefound = true
-        end
-    end
+    differencefound && print && printtable(fromstate, tostate; header = string.([fromto...,]))
 
     if update
         fromto[2] !== :current && error("diff_state: update is true but fromto[2] = ", fromto[2])
@@ -54,4 +43,6 @@ function diff_state(m::Module, fromto::Pair{T1,T2} = (:on_load => :current); pri
             push!(module_states[m], tostate)
         end
     end
+
+    return differencefound
 end
