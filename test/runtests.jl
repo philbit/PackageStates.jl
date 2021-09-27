@@ -16,7 +16,8 @@ function mkdummypackage(tmpdir, name)
     return targetdir
 end
 
-remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(2,4:end)], "\n")
+remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(1:4,6:end)], "\n")
+remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(1:2,4,6:end)], "\n")
 
 @testset "Basics" begin
     mktempdir() do tmp
@@ -38,29 +39,34 @@ remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(2,4:end)], 
         Pkg.activate(env1)
         @eval using DummyPackage
 
-        @test get_state(DummyPackage, :id) == Base.PkgId(Base.UUID("a5a70863-7a97-4c01-857e-744174fcb92d"), "DummyPackage")
-        @test get_state(DummyPackage, :project) == joinpath(env1, "Project.toml")
-        @test get_state(DummyPackage, :load_path)[1] == joinpath(env1, "Project.toml")
-        @test get_state(DummyPackage, :tree_hash) == th1
-        @test get_state(DummyPackage, :manifest_tree_hash) == get_state(DummyPackage, :tree_hash)
+        s = state(DummyPackage)
+        @test s.id == Base.PkgId(Base.UUID("a5a70863-7a97-4c01-857e-744174fcb92d"), "DummyPackage")
+        @test s.project == joinpath(env1, "Project.toml")
+        @test s.load_path[1] == joinpath(env1, "Project.toml")
+        @test s.tree_hash == th1
+        @test s.manifest_tree_hash == s.tree_hash
         
         Pkg.activate(env2)
-        @test get_state(DummyPackage, :tree_hash) == th1
-        @test get_state(DummyPackage, :manifest_tree_hash) == th2
-        @test get_state(DummyPackage, :load_path)[1] == joinpath(env2, "Project.toml")
-        
-        @test @capture_out(diff_all_states(:on_load => :newest)) == ""
-        @test get_state(DummyPackage, :manifest_tree_hash, :newest) == th1
 
-        @test diff_state(DummyPackage, print = false)
-        @test remove_dateline_from_diff(@capture_out(diff_state(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_state(DummyPackage, :on_load => :current)))
+        s2 = state(DummyPackage)
+        @test s2.tree_hash == th1
+        @test s2.manifest_tree_hash == th2
+        @test s2.load_path[1] == joinpath(env2, "Project.toml")
         
-        diff_all_states(print = false, update = true)
-        @test get_state(DummyPackage, :manifest_tree_hash, :newest) == th2
-        @test @capture_out(diff_all_states(:on_load => :newest)) ≠ ""
-        @test remove_dateline_from_diff(@capture_out(diff_state(DummyPackage, :on_load => :newest))) == remove_dateline_from_diff(@capture_out(diff_state(DummyPackage, :on_load => :current)))
+        @test @capture_out(diff_states_all(:on_load => :newest)) == ""
+        snew = state(DummyPackage, :newest)
+        @test snew.manifest_tree_hash == th1
 
+        @test diff_states(DummyPackage, print = false)
+        @test @capture_out(diff_states(DummyPackage)) ≠ ""
+        @test remove_dateline_from_diff(@capture_out(diff_states(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
+        
+        diff_states_all(print = false, update = true)
+        supdated = state(DummyPackage, :newest)
+        @test supdated.manifest_tree_hash == th2
+        @test @capture_out(diff_states_all(:on_load => :newest)) ≠ ""
+        @test remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :newest))) == remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
         Pkg.activate(env1)
-        @test diff_all_states(print=false) == [PackageStates]
+        @test diff_states_all(print=false) == [PackageStates]
     end
 end
