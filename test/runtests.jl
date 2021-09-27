@@ -68,5 +68,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :newest))) == remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
         Pkg.activate(env1)
         @test diff_states_all(print=false) == [PackageStates]
+
+        @test recorded_modules() == [DummyPackage, PackageStates]
     end
 end
