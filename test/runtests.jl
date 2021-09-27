@@ -69,6 +69,6 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         Pkg.activate(env1)
         @test diff_states_all(print=false) == [PackageStates]
 
-        @test recorded_modules() == [DummyPackage, PackageStates]
+        @test recorded_modules() == Set([DummyPackage, PackageStates])
     end
 end

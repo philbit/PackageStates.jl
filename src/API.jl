@@ -3,7 +3,7 @@ export PackageState
 
 IntegerOrSymbol = Union{Integer, Symbol}
 
-recorded_modules() = collect(keys(module_states))
+recorded_modules() = Set(keys(module_states))
 
 # General function to get whole state or specific property
 function state(m::Module, idx::IntegerOrSymbol = :current)
