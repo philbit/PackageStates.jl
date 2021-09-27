@@ -12,7 +12,7 @@ function state(m::Module, idx::IntegerOrSymbol = :current)
     return idxstates(m, Val(idx))
 end
 
-function diff_states_all(fromto::Pair{T1,T2} = (:on_load => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
+function diff_states_all(fromto::Pair{T1,T2} = (:newest => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
     mods = Module[]
     for (mod, states) in module_states
         if diff_states(mod, fromto; print = print, update = update)
@@ -22,7 +22,7 @@ function diff_states_all(fromto::Pair{T1,T2} = (:on_load => :current); print::Bo
     return mods
 end
 
-function diff_states(m::Module, fromto::Pair{T1,T2} = (:on_load => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
+function diff_states(m::Module, fromto::Pair{T1,T2} = (:newest => :current); print::Bool = true, update::Bool = false) where {T1<:IntegerOrSymbol, T2<:IntegerOrSymbol}
     fromstate = idxstates(m, Val(fromto[1]))
     tostate = idxstates(m, Val(fromto[2]))
 
@@ -31,8 +31,7 @@ function diff_states(m::Module, fromto::Pair{T1,T2} = (:on_load => :current); pr
     differencefound && print && printtable(fromstate, tostate; header = string.([fromto...,]))
 
     if update
-        fromto[2] !== :current && error("diff_state: update is true but fromto[2] = ", fromto[2])
-        # header_printed==true means there was a difference
+        fromto !== (:newest => :current) && error("diff_state: update is true but comparing ", fromto, " rather than newest to current state")
         if differencefound
             push!(module_states[m], tostate)
         end

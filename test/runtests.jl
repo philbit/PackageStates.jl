@@ -59,7 +59,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
 
         @test diff_states(DummyPackage, print = false)
         @test @capture_out(diff_states(DummyPackage)) ≠ ""
-        @test remove_dateline_from_diff(@capture_out(diff_states(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
+        @test remove_dateline_from_diff(@capture_out(diff_states(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_states(DummyPackage, :newest => :current)))
         
         diff_states_all(print = false, update = true)
         supdated = state(DummyPackage, :newest)
@@ -67,7 +67,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test @capture_out(diff_states_all(:on_load => :newest)) ≠ ""
         @test remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :newest))) == remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
         Pkg.activate(env1)
-        @test diff_states_all(print=false) == [PackageStates]
+        @test diff_states_all(:on_load => :current, print=false) == [PackageStates]
 
         @test recorded_modules() == Set([DummyPackage, PackageStates])
     end
