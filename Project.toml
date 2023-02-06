@@ -3,7 +3,7 @@ uuid = "412cc100-f440-45a8-9ec7-153ed5111422"
 license = "MIT"
 desc = "Package version tracking."
 authors = ["Philip Bittihn <philip@bittihn.de>"]
-version = "0.1.0"
+version = "0.1.1-dev"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
