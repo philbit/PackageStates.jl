@@ -3,7 +3,7 @@
 
 # PackageStates.jl
 
-In Julia, environments/projects are an efficient way to preserve the exact environment in which code was run, i.e. the versions of all packages. For computational/numerical code, this can ensure reproducibility. However, relying heavily on environments comes at a cost: If your workflow involves frequent switching between different projects, the version of loaded packages depends on when exactly the corresponding `using` directive was issued. This can lead to hard-to-debug situations of "wrong" verions being loaded, for example when environment switching is done programmatically and packages are implicitly loaded as dependencies. Wouldn't it be nice to have a tool to check which environment was active when a package was loaded and which exact version of the code the loaded version actually corresponds to? This is the purpose of `PackageStates.jl`. In short, it allows you to record and compare the versions of loaded packages and their desired versions in different environments.
+In Julia, environments/projects are an efficient way to preserve the exact environment in which code was run, i.e. the versions of all packages. For computational/numerical code, this can ensure reproducibility. However, relying heavily on environments comes at a cost: If your workflow involves frequent switching between different projects, the version of loaded packages depends on when exactly the corresponding `using` directive was issued. This can lead to hard-to-debug situations of "wrong" versions being loaded, for example when environment switching is done programmatically and packages are implicitly loaded as dependencies. Wouldn't it be nice to have a tool to check which environment was active when a package was loaded and which exact version of the code the loaded version actually corresponds to? This is the purpose of `PackageStates.jl`. In short, it allows you to record and compare the versions of loaded packages and their desired versions in different environments.
 
 ## Disclaimer
 
@@ -101,11 +101,16 @@ By default, `state` returns the current state, not a state recorded in the past,
 - Load path: The load path at the time of recording, the first path is the active project at the time of recording
 - Package ID: The `Base.PkgID`
 - Source path: The source path of the loaded version at the time of recording
-- Tree hash: The tree hash of the source path of the loaded version at the time of recording (which, in the best case, can be translated to a git commit to identify the corresponding version of the code)
-- Manifest t.h.: The tree hash for the package requested in Manifest.toml at the time of recording. This can be `nothing` (e.g., in the package's own environment, which doesn't contain a tree hash) or "none (package dev'ed)".
-- Project: The project in which the above package was found at the time of recording. Always one of the entries of load path. The Manifest t.h. above is from this project.
+- Head tree hash: If the source path is a repository (e.g., for developed packages), this is the tree hash of the currently-checked out HEAD commit at the time of recording. Changes to the working copy or the index do not alter this tree hash. "missing" if source path is not a repository (e.g., for regular added packages).
+- Directory tree hash: The tree hash of the source path at the time of recording. Any modifications and additional files in the source directory (for example, `Manifest.toml`s, output files, etc.) change this tree hash. For a clean working copy checkout out from a repo, it should correspond to the head tree hash. Note that many systems write hidden files (e.g., `.DS_Store` on MacOS) which you might have ignored in your `.gitignore` but which still change this tree hash.
+- Manifest tree hash: The tree hash for the package noted in `Manifest.toml` at the time of recording. This can be "missing", e.g., in the package's own environment, which doesn't contain a tree hash, or when the package is dev'ed.
+- Project: The project in which the above package was found at the time of recording. Always one of the entries of load path. The Manifest tree hash above is from this project.
 
-The Project and Manifest tree hash therefore refer to the version that would have been loaded if the `using` directive had been issued at the time "Timestamp". In our example above, we are still in the environment where we issued the `using JLD2` directive, so the two tree hashes are identical.
+The Project and Manifest tree hash therefore refer to the version that would have been loaded if the `using` directive had been issued at the time "Timestamp". In our example above, we are still in the environment where we issued the `using JLD2` directive, so the directory and manifest tree hashes are identical.
+
+
+> ⚠️ Note that Julia versions up to to 1.8 compute a different tree hash on Windows. Later versions have fixed this at least for git repos, but for on-disk directories, the tree hash still differs, replacing the original inconsistency between operating systems by one between directories and repos. To circumvent the latter inconsistency and make use of the fix for repos, `PackageStates` currently creates temporary git repos of working directories on Windows, which makes computing the directory tree hash a potentially heavy operation.
+
 
 Let's switch to the `env_new` environment and see what changes:
 ```julia
