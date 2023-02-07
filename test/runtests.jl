@@ -29,13 +29,18 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         dummy2 = mkdummypackage(tmp, "DummyPackage_v2")
         anotherdummy = mkdummypackage(tmp, "AnotherDummyPackage")
         
+
         # Julia on Windows computes a different tree hash before version 1.9.0
-        th1 = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "1bd2b16b793dfbf96aef17385f635729ae32a43c" : "dd574217160ae714ff496b9239a5ae1a4d819aa8"
-        th2 = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "90ca0b300186580cfe89f5336ec58453257a1ec6" : "98cea5b18356123cda026692eafb1e4a55813dac"
+        # (after 1.9.0, it is fine for repos, but still differs for bare directories
+        # using Pkg.GitTools.tree_hash, see tests further below)
+        th_broken = Sys.iswindows() && Base.VERSION < v"1.9.0-"
+        th1 = th_broken ? "1bd2b16b793dfbf96aef17385f635729ae32a43c" : "dd574217160ae714ff496b9239a5ae1a4d819aa8"
+        th2 = th_broken ? "90ca0b300186580cfe89f5336ec58453257a1ec6" : "98cea5b18356123cda026692eafb1e4a55813dac"
 
-        th_another = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "eb224df14392b1d2e12f969907b6404cbd7ab543" : "cc7028d54f62f514daf4b627ad3b60df47ee018b"
-        th_another_mod = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "a43d3ea9c1d3f6804e709691a4d4317cac3ce5f9" : "3af98e735356d9fb59ccfda8a3264543dd290e1e"
+        th_another = th_broken ? "eb224df14392b1d2e12f969907b6404cbd7ab543" : "cc7028d54f62f514daf4b627ad3b60df47ee018b"
+        th_another_mod = th_broken ? "a43d3ea9c1d3f6804e709691a4d4317cac3ce5f9" : "3af98e735356d9fb59ccfda8a3264543dd290e1e"
 
+        
         Pkg.activate(env1)
         Pkg.add(path=dummy)
         Pkg.activate(env2)
@@ -100,6 +105,14 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         sdev3 = state(AnotherDummyPackage)
         @test sdev3.head_tree_hash == th_another_mod
         @test sdev3.directory_tree_hash == th_another_mod
+
+
+        # On newer Windows Julia versions, where the tree hash for repos is not broken anymore (!th_broken),
+        # it differs from the tree hash of the directory on disk.
+        # This test to detect if it ever changes (then the heavy use_dir=false
+        # branch could be removed from tree_hash_fmt_dir).
+        th_dir_broken = Sys.iswindows() && !th_broken
+        @test PackageStates.tree_hash_fmt_dir(s.dir; use_dir = false) == PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true) broken=th_dir_broken
 
         @test recorded_modules() == Set([AnotherDummyPackage, DummyPackage, PackageStates])
     end
