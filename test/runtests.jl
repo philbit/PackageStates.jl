@@ -29,13 +29,12 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         dummy2 = mkdummypackage(tmp, "DummyPackage_v2")
         anotherdummy = mkdummypackage(tmp, "AnotherDummyPackage")
         
-        # Julia on Windows computes a different tree hash
-        th1 = #=Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "1bd2b16b793dfbf96aef17385f635729ae32a43c" :=# "dd574217160ae714ff496b9239a5ae1a4d819aa8"
-        # Whatever that bug is, it doesn't seem to affect version 2 of the Dummy package...
-        th2 = #=Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "90ca0b300186580cfe89f5336ec58453257a1ec6" :=# "98cea5b18356123cda026692eafb1e4a55813dac"
+        # Julia on Windows computes a different tree hash before version 1.9.0
+        th1 = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "1bd2b16b793dfbf96aef17385f635729ae32a43c" : "dd574217160ae714ff496b9239a5ae1a4d819aa8"
+        th2 = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "90ca0b300186580cfe89f5336ec58453257a1ec6" : "98cea5b18356123cda026692eafb1e4a55813dac"
 
-        th_another = "cc7028d54f62f514daf4b627ad3b60df47ee018b"
-        th_another_mod = "3af98e735356d9fb59ccfda8a3264543dd290e1e"
+        th_another = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "eb224df14392b1d2e12f969907b6404cbd7ab543" : "cc7028d54f62f514daf4b627ad3b60df47ee018b"
+        th_another_mod = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "a43d3ea9c1d3f6804e709691a4d4317cac3ce5f9" : "3af98e735356d9fb59ccfda8a3264543dd290e1e"
 
         Pkg.activate(env1)
         Pkg.add(path=dummy)
