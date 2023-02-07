@@ -27,11 +27,15 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         
         dummy = mkdummypackage(tmp, "DummyPackage")
         dummy2 = mkdummypackage(tmp, "DummyPackage_v2")
+        anotherdummy = mkdummypackage(tmp, "AnotherDummyPackage")
         
         # Julia on Windows computes a different tree hash
         th1 = Sys.iswindows() ? "1bd2b16b793dfbf96aef17385f635729ae32a43c" : "dd574217160ae714ff496b9239a5ae1a4d819aa8"
         # Whatever that bug is, it doesn't seem to affect version 2 of the Dummy package...
         th2 = Sys.iswindows() && Base.VERSION < v"1.9.0-" ? "90ca0b300186580cfe89f5336ec58453257a1ec6" : "98cea5b18356123cda026692eafb1e4a55813dac"
+
+        th_another = "cc7028d54f62f514daf4b627ad3b60df47ee018b"
+        th_another_mod = "3af98e735356d9fb59ccfda8a3264543dd290e1e"
 
         Pkg.activate(env1)
         Pkg.add(path=dummy)
@@ -45,13 +49,15 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test s.id == Base.PkgId(Base.UUID("a5a70863-7a97-4c01-857e-744174fcb92d"), "DummyPackage")
         @test s.project == joinpath(env1, "Project.toml")
         @test s.load_path[1] == joinpath(env1, "Project.toml")
-        @test s.tree_hash == th1
-        @test s.manifest_tree_hash == s.tree_hash
+        @test s.head_tree_hash == PackageStates.EMPTY_TREE_HASH
+        @test s.directory_tree_hash == th1
+        @test s.manifest_tree_hash == s.directory_tree_hash
         
         Pkg.activate(env2)
 
         s2 = state(DummyPackage)
-        @test s2.tree_hash == th1
+        @test s2.head_tree_hash == PackageStates.EMPTY_TREE_HASH
+        @test s2.directory_tree_hash == th1
         @test s2.manifest_tree_hash == th2
         @test s2.load_path[1] == joinpath(env2, "Project.toml")
         
@@ -71,6 +77,31 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         Pkg.activate(env1)
         @test diff_states_all(:on_load => :current, print=false) == [PackageStates]
 
-        @test recorded_modules() == Set([DummyPackage, PackageStates])
+        # Test developed package (with modification and commit)
+        Pkg.develop(path=anotherdummy)
+        @eval using AnotherDummyPackage
+        sdev = state(AnotherDummyPackage)
+        @test sdev.head_tree_hash == th_another
+        @test sdev.directory_tree_hash == th_another
+        @test sdev.manifest_tree_hash == PackageStates.EMPTY_TREE_HASH
+
+        open(joinpath(anotherdummy, "src", "myfile.txt"), "w") do io
+            write(io, "Hello world!")
+        end
+        # dirty: still old head, but altered working dir
+        sdev2 = state(AnotherDummyPackage)
+        @test sdev2.head_tree_hash == th_another
+        @test sdev2.directory_tree_hash == th_another_mod
+
+        # Commit the change
+        r = LibGit2.GitRepo(anotherdummy)
+        LibGit2.add!(r, "**")
+        LibGit2.commit(r, "msg"; author=SIGNATURE, committer=SIGNATURE)
+        # now clean again (head t.h. == directory t.h.)
+        sdev3 = state(AnotherDummyPackage)
+        @test sdev3.head_tree_hash == th_another_mod
+        @test sdev3.directory_tree_hash == th_another_mod
+
+        @test recorded_modules() == Set([AnotherDummyPackage, DummyPackage, PackageStates])
     end
 end

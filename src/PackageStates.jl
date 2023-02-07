@@ -3,6 +3,7 @@ module PackageStates
 using Pkg
 using Dates
 using PrettyTables
+using LibGit2
 
 include("utils.jl")
 include("core.jl")

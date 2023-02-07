@@ -4,8 +4,9 @@ Base.@kwdef struct PackageState
     load_path::Vector{String}
     id::Base.PkgId
     dir::String
-    tree_hash::String
-    manifest_tree_hash::Union{Nothing,String}
+    head_tree_hash::String
+    directory_tree_hash::String
+    manifest_tree_hash::String
     project::Union{Nothing,String}
 end
 
@@ -14,7 +15,8 @@ function Base.:(==)(s1::PackageState, s2::PackageState)
     s1.id == s2.id &&
     s1.project == s2.project &&
     s1.load_path == s2.load_path &&
-    s1.tree_hash == s2.tree_hash &&
+    s1.head_tree_hash == s2.head_tree_hash &&
+    s1.directory_tree_hash == s2.directory_tree_hash &&
     s1.manifest_tree_hash == s2.manifest_tree_hash
 end
 
@@ -22,7 +24,8 @@ const row_names = ["Timestamp",
                    "Load path",
                    "Package ID",
                    "Source path",
-                   "Tree hash",
+                   "Head tree hash",
+                   "Directory t.h.",
                    "Manifest t.h.",
                    "Project"]
 
@@ -31,7 +34,8 @@ function tabledata(s::PackageState)
             s.load_path,
             s.id,
             s.dir,
-            s.tree_hash,
+            s.head_tree_hash,
+            s.directory_tree_hash,
             s.manifest_tree_hash,
             s.project]
     return data
@@ -63,7 +67,8 @@ function current_package_state(pkg::Base.PkgId)
     #println("Path: ", pathof(m))
     #println("pkgdir: ", pkgdir(m))
     d = pkgdir(m)
-    th = tree_hash_fmt(d)
+    hth = tree_hash_fmt_head(d)
+    dth = tree_hash_fmt_dir(d)
     project, mth = project_and_tree_hash(pkg)
     return PackageState(
             timestamp = date,
@@ -71,7 +76,8 @@ function current_package_state(pkg::Base.PkgId)
             id = pkg,
             project = project,
             load_path = Base.load_path(),
-            tree_hash = th,
+            head_tree_hash = hth,
+            directory_tree_hash = dth,
             manifest_tree_hash = mth)
 end
 
