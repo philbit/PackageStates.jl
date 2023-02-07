@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
   push:
     branches:
       - main
@@ -28,6 +29,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
+          show-versioninfo: true
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: actions/cache@v1

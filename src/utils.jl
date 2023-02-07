@@ -1,6 +1,58 @@
-tree_hash_fmt(d) = bytes2hex(Pkg.GitTools.tree_hash(d))
+const EMPTY_TREE_HASH = "missing"
 
-EMPTY_TREE_HASH = "none (package dev'ed)"
+function tree_hash_fmt_dir(d; use_dir = !Sys.iswindows())
+    
+    if use_dir
+        return bytes2hex(Pkg.GitTools.tree_hash(d))
+    end
+
+
+    # The simple approach above yields a different tree hash on Windows, even if the directory is
+    # a clean working copy of the repo
+    # Same reason because of which this thing is in Pkg.jl/src/Operations.jl:
+        # # Assert that the tarball unpacked to the tree sha we wanted
+        # # TODO: Enable on Windows when tree_hash handles
+        # # executable bits correctly, see JuliaLang/julia #33212.
+        # if !Sys.iswindows()
+        #     if SHA1(GitTools.tree_hash(unpacked)) != hash
+        #         @warn "tarball content does not match git-tree-sha1"
+        #         url_success = false
+        #     end
+        #     url_success || continue
+        # end
+
+
+    # Workaround for windows: copy the directory, create git repo, write-tree
+    hash = mktempdir() do tmpdir
+        repodir = joinpath(tmpdir, splitpath(realpath(d))[end])
+        # If directory is a symlink, copying it would actually link to the same directory
+        # modifying the target -> abort
+        if islink(d)
+            @warn("$(d): path is a symlink, not calculating tree hash")
+            return EMPTY_TREE_HASH
+        end
+
+        cp(d, repodir)
+        if !isdir(joinpath(repodir, ".git"))
+            r = LibGit2.init(repodir)
+        else
+            r = LibGit2.GitRepo(repodir)
+        end
+        gi = LibGit2.GitIndex(r)
+        LibGit2.add!(gi, "**"; flags = LibGit2.Consts.INDEX_ADD_FORCE)
+        return string(LibGit2.write_tree!(gi))
+    end
+    return hash
+end
+
+
+function tree_hash_fmt_head(d)
+    isdir(joinpath(d, ".git")) || return EMPTY_TREE_HASH
+    commit = Pkg.Types.get_object_or_branch(LibGit2.GitRepo(d), "HEAD")[1]
+    tree = LibGit2.peel(LibGit2.GitTree, commit)
+    hash = LibGit2.GitHash(tree)
+    return string(hash)
+end
 
 function project_and_tree_hash(pkg::Base.PkgId)
     for env in Base.load_path()
@@ -9,7 +61,7 @@ function project_and_tree_hash(pkg::Base.PkgId)
         mth = explicit_manifest_uuid_path_tree_hash(project_file,pkg)
         mth === nothing || return env, mth
     end
-    return nothing, nothing
+    return nothing, EMPTY_TREE_HASH
 end
 
 # Analogous to explicit_manifest_uuid_path from base/loading.jl,
