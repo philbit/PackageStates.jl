@@ -1,3 +1,4 @@
+const EMPTY_TREE_HASH = "missing"
 
 function tree_hash_fmt_dir(d; use_dir = !Sys.iswindows())
     
@@ -52,8 +53,6 @@ function tree_hash_fmt_head(d)
     hash = LibGit2.GitHash(tree)
     return string(hash)
 end
-
-EMPTY_TREE_HASH = "missing"
 
 function project_and_tree_hash(pkg::Base.PkgId)
     for env in Base.load_path()
