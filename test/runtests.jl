@@ -112,7 +112,13 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         # This test to detect if it ever changes (then the heavy use_dir=false
         # branch could be removed from tree_hash_fmt_dir).
         th_dir_broken = Sys.iswindows() && !th_broken
-        @test PackageStates.tree_hash_fmt_dir(s.dir; use_dir = false) == PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true) broken=th_dir_broken
+        if th_dir_broken # could use @test ... broken=th_dir_broken here, but doesn't work on Julia 1.6
+            @test PackageStates.tree_hash_fmt_dir(s.dir; use_dir = false) ≠ PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
+            @test PackageStates.tree_hash_fmt_dir(dummy; use_dir = false) ≠ PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
+        else
+            @test PackageStates.tree_hash_fmt_dir(s.dir; use_dir = false) == PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
+            @test PackageStates.tree_hash_fmt_dir(dummy; use_dir = false) == PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
+        end
 
         @test recorded_modules() == Set([AnotherDummyPackage, DummyPackage, PackageStates])
     end
