@@ -53,7 +53,7 @@ function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
                  row_names = row_names,
                  autowrap = true,
                  linebreaks = true,
-                 columns_width = min((displaysize(stdout)[2]-18-3*N)÷N,100*N),
+                 columns_width = min((displaysize(stdout)[2]-19-3*N)÷N,100*N),
                  alignment = :l,
                  noheader = N == 1,
                  highlighters = highlighters; kwargs...)
