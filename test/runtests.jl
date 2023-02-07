@@ -120,6 +120,11 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
             @test PackageStates.tree_hash_fmt_dir(dummy; use_dir = false) == PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
         end
 
+        # Test that the heavy method of copying and creating a repo for the tree hash is skipped on symlinks
+        symlink(dummy, joinpath(tmp, "link"))
+        @test PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false) == PackageStates.EMPTY_TREE_HASH
+        @test startswith(@capture_err(PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false)), "┌ Warning: ")
+
         @test recorded_modules() == Set([AnotherDummyPackage, DummyPackage, PackageStates])
     end
 end
