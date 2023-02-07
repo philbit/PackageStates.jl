@@ -1,7 +1,7 @@
 
-function tree_hash_fmt_dir(d)
+function tree_hash_fmt_dir(d; use_dir = !Sys.iswindows())
     
-    if !Sys.iswindows()
+    if use_dir
         return bytes2hex(Pkg.GitTools.tree_hash(d))
     end
 
