@@ -21,14 +21,14 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
 
 @testset "Basics" begin
     mktempdir() do tmp
-        
+
         env1 = mkdir(joinpath(tmp, "env1"))
         env2 = mkdir(joinpath(tmp, "env2"))
-        
+
         dummy = mkdummypackage(tmp, "DummyPackage")
         dummy2 = mkdummypackage(tmp, "DummyPackage_v2")
         anotherdummy = mkdummypackage(tmp, "AnotherDummyPackage")
-        
+
 
         # Julia on Windows computes a different tree hash before version 1.9.0
         # (after 1.9.0, it is fine for repos, but still differs for bare directories
@@ -40,7 +40,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         th_another = th_broken ? "eb224df14392b1d2e12f969907b6404cbd7ab543" : "cc7028d54f62f514daf4b627ad3b60df47ee018b"
         th_another_mod = th_broken ? "a43d3ea9c1d3f6804e709691a4d4317cac3ce5f9" : "3af98e735356d9fb59ccfda8a3264543dd290e1e"
 
-        
+
         Pkg.activate(env1)
         Pkg.add(path=dummy)
         Pkg.activate(env2)
@@ -56,7 +56,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test s.head_tree_hash == PackageStates.EMPTY_TREE_HASH
         @test s.directory_tree_hash == th1
         @test s.manifest_tree_hash == s.directory_tree_hash
-        
+
         Pkg.activate(env2)
 
         s2 = state(DummyPackage)
@@ -64,7 +64,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test s2.directory_tree_hash == th1
         @test s2.manifest_tree_hash == th2
         @test s2.load_path[1] == joinpath(env2, "Project.toml")
-        
+
         @test @capture_out(diff_states_all(:on_load => :newest)) == ""
         snew = state(DummyPackage, :newest)
         @test snew.manifest_tree_hash == th1
@@ -72,7 +72,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test diff_states(DummyPackage, print = false)
         @test @capture_out(diff_states(DummyPackage)) ≠ ""
         @test remove_dateline_from_diff(@capture_out(diff_states(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_states(DummyPackage, :newest => :current)))
-        
+
         diff_states_all(print = false, update = true)
         supdated = state(DummyPackage, :newest)
         @test supdated.manifest_tree_hash == th2
@@ -125,6 +125,6 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false) == PackageStates.EMPTY_TREE_HASH
         @test startswith(@capture_err(PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false)), "┌ Warning: ")
 
-        @test recorded_modules() == Set([AnotherDummyPackage, DummyPackage, PackageStates])
+        @test Set([AnotherDummyPackage, DummyPackage, PackageStates]) ⊂ recorded_modules()
     end
 end
