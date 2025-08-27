@@ -125,6 +125,6 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false) == PackageStates.EMPTY_TREE_HASH
         @test startswith(@capture_err(PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false)), "┌ Warning: ")
 
-        @test Set([AnotherDummyPackage, DummyPackage, PackageStates]) ⊂ recorded_modules()
+        @test issubset([AnotherDummyPackage, DummyPackage, PackageStates], recorded_modules())
     end
 end
