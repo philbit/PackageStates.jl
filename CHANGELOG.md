@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1-dev
+ - updated version bounds for PrettyTables to include v3
+ - updated PrettyTables API calls to be compatible with v3.x
+ - replaced deprecated parameters: `columns_width` → `fixed_data_column_widths`, `noheader` → `show_column_labels`, `row_names` → `row_labels`, `header` → `column_labels`, `Highlighter` → `TextHighlighter`
+ - note: single-column tables now always show column headers due to PrettyTables v3 limitations
+
 ## v0.2.0
  - now three different tree hashes: head, directory and manifest (see README)
  - (heavy) workaround to compute consistent directory tree hashes on Windows

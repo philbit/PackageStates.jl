@@ -56,13 +56,16 @@ function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
         :auto_wrap => true,
         :line_breaks => true,
         :alignment => :l,
-        :show_column_labels => N != 1,
+        :show_column_labels => true,  # Always show column labels for now
         :highlighters => highlighters
     )
     
-    # Only set fixed column width for multi-column tables with headers
+    # Set column width based on number of columns
     if N > 1
         table_kwargs[:fixed_data_column_widths] = min((displaysize(stdout)[2]-19-3*N)÷N,100*N)
+    else
+        # For single column, let PrettyTables auto-compute the width
+        table_kwargs[:fixed_data_column_widths] = 0
     end
     
     pretty_table(hcat(datavectors...); table_kwargs..., kwargs...)
