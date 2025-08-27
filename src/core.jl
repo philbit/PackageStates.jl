@@ -44,19 +44,28 @@ end
 printtable(states::Vararg{PackageState, N}; kwargs...) where N = printtable(tabledata.(states)...; kwargs...)
 function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
     println()
-    highlighters = ()
+    highlighters = PrettyTables.TextHighlighter[]
     if N > 1
-        highlighters = ( Highlighter(  (data, i, j) -> (i > 1) && length(unique(data[i,:]))> 1,
-                                        crayon"fg:red"),)
+        highlighters = [ PrettyTables.TextHighlighter(  (data, i, j) -> (i > 1) && length(unique(data[i,:]))> 1,
+                                        crayon"fg:red")]
     end
-    pretty_table(hcat(datavectors...),
-                 row_names = row_names,
-                 autowrap = true,
-                 linebreaks = true,
-                 columns_width = min((displaysize(stdout)[2]-19-3*N)÷N,100*N),
-                 alignment = :l,
-                 noheader = N == 1,
-                 highlighters = highlighters; kwargs...)
+    
+    # Only set fixed column width when showing column labels and multiple columns
+    table_kwargs = Dict{Symbol, Any}(
+        :row_labels => row_names,
+        :auto_wrap => true,
+        :line_breaks => true,
+        :alignment => :l,
+        :show_column_labels => N != 1,
+        :highlighters => highlighters
+    )
+    
+    # Only set fixed column width for multi-column tables with headers
+    if N > 1
+        table_kwargs[:fixed_data_column_widths] = min((displaysize(stdout)[2]-19-3*N)÷N,100*N)
+    end
+    
+    pretty_table(hcat(datavectors...); table_kwargs..., kwargs...)
 end
 
 current_package_state(m::Module) = current_package_state(Base.root_module_key(m))

@@ -28,7 +28,7 @@ function diff_states(m::Module, fromto::Pair{T1,T2} = (:newest => :current); pri
 
     differencefound = fromstate ≠ tostate
 
-    differencefound && print && printtable(fromstate, tostate; header = string.([fromto...,]))
+    differencefound && print && printtable(fromstate, tostate; column_labels = string.([fromto...,]))
 
     if update
         fromto !== (:newest => :current) && error("diff_state: update is true but comparing ", fromto, " rather than newest to current state")
