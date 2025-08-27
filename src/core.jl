@@ -11,7 +11,7 @@ Base.@kwdef struct PackageState
 end
 
 function Base.:(==)(s1::PackageState, s2::PackageState)
-    s1.dir == s2.dir && 
+    s1.dir == s2.dir &&
     s1.id == s2.id &&
     s1.project == s2.project &&
     s1.load_path == s2.load_path &&
@@ -49,25 +49,18 @@ function printtable(datavectors::Vararg{AbstractVector, N}; kwargs...) where N
         highlighters = [ PrettyTables.TextHighlighter(  (data, i, j) -> (i > 1) && length(unique(data[i,:]))> 1,
                                         crayon"fg:red")]
     end
-    
+
     # Only set fixed column width when showing column labels and multiple columns
     table_kwargs = Dict{Symbol, Any}(
         :row_labels => row_names,
         :auto_wrap => true,
         :line_breaks => true,
         :alignment => :l,
-        :show_column_labels => true,  # Always show column labels for now
-        :highlighters => highlighters
+        :show_column_labels => true,
+        :highlighters => highlighters,
+        :fixed_data_column_widths => min((displaysize(stdout)[2]-19-3*N)÷N,100*N)
     )
-    
-    # Set column width based on number of columns
-    if N > 1
-        table_kwargs[:fixed_data_column_widths] = min((displaysize(stdout)[2]-19-3*N)÷N,100*N)
-    else
-        # For single column, let PrettyTables auto-compute the width
-        table_kwargs[:fixed_data_column_widths] = 0
-    end
-    
+
     pretty_table(hcat(datavectors...); table_kwargs..., kwargs...)
 end
 
@@ -100,7 +93,7 @@ function on_load_package(pkg::Base.PkgId)
     push!(module_states, m => [current_package_state(pkg)])
 end
 
-function idxstates(m::Module, ::Val{i}) where {i} 
+function idxstates(m::Module, ::Val{i}) where {i}
     @assert(i isa Integer, "State index must be an integer or :on_load, :newest, :current")
     return module_states[m][i]
 end

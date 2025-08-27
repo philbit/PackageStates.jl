@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.1-dev
+## v0.2.2
  - updated version bounds for PrettyTables to include v3
  - updated PrettyTables API calls to be compatible with v3.x
  - replaced deprecated parameters: `columns_width` → `fixed_data_column_widths`, `noheader` → `show_column_labels`, `row_names` → `row_labels`, `header` → `column_labels`, `Highlighter` → `TextHighlighter`
