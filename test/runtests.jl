@@ -4,6 +4,8 @@ using Pkg
 using LibGit2
 using PackageStates
 
+original_loaded_modules = Set(values(Base.loaded_modules))
+
 const SIGNATURE = LibGit2.Signature("DUMMY", "DUMMY@DUMMY.DOM", round(time()), 0)
 
 function mkdummypackage(tmpdir, name)
@@ -79,7 +81,9 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test @capture_out(diff_states_all(:on_load => :newest)) ≠ ""
         @test remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :newest))) == remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
         Pkg.activate(env1)
-        @test diff_states_all(:on_load => :current, print=false) == [PackageStates]
+        # Check that the only differences are in the non-user
+        # modules/packages (should be in load path - not checked here)
+        @test isempty(setdiff(diff_states_all(:on_load => :current, print=false), original_loaded_modules))
 
         # Test developed package (with modification and commit)
         Pkg.develop(path=anotherdummy)

@@ -73,7 +73,7 @@ Set{Module} with 9 elements:
   FileIO
   DataStructures
 ```
-This includes `PackageStates` itself, `JLD2` and `JLD2`s dependencies, excluding anything that was loaded before or by PackageStates. Specifically, stdlibs are always loaded at startup and PackageStates itself has a few dependencies outside stdlibs. If the list on your system contains fewer packages, additional packages with overlapping dependencies were loaded before `using PackageStates` (for example, Revise.jl or similar in your startup.jl). 
+This includes `PackageStates` itself, `JLD2` and `JLD2`s dependencies, excluding anything that was loaded before or by PackageStates (starting with Julia v1.11, `PackageStates`s own dependencies *are* recorded due to changes in Julia internals). Specifically, stdlibs are always loaded at startup and PackageStates itself has a few dependencies outside stdlibs. If the list on your system contains fewer packages, additional packages with overlapping dependencies were loaded before `using PackageStates` (for example, Revise.jl or similar in your startup.jl). 
 
 The central function to inquire about the state of a package is `state`, which returns a `PackageState` that is displayed in the REPL as follows:
 
