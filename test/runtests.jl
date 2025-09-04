@@ -18,6 +18,24 @@ function mkdummypackage(tmpdir, name)
     return targetdir
 end
 
+# In Julia 1.12, module bindings follow world
+# age logic, so after @eval using SomePackage
+# we cannot access SomePackage directly but
+# need to get the module from Base.loaded_modules
+# (could also consider @world(SomePackage, ∞), but
+# would have to define dummy for version < 1.12)
+macro make_loaded_module_available(modulesymbol::Symbol)
+    ms = QuoteNode(modulesymbol)
+    return :( $modulesymbol = begin
+        for (ps, m) in Base.loaded_modules
+            if Symbol(m) == $ms
+                return m
+            end
+        end
+        error("Module $(String(modulesymbol)) is not among loaded modules")
+    end )
+end
+
 remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(1:4,6:end)], "\n")
 remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(1:2,4,6:end)], "\n")
 
@@ -50,6 +68,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
 
         Pkg.activate(env1)
         @eval using DummyPackage
+        @make_loaded_module_available(DummyPackage)
 
         s = state(DummyPackage)
         @test s.id == Base.PkgId(Base.UUID("a5a70863-7a97-4c01-857e-744174fcb92d"), "DummyPackage")
@@ -88,6 +107,8 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         # Test developed package (with modification and commit)
         Pkg.develop(path=anotherdummy)
         @eval using AnotherDummyPackage
+        @make_loaded_module_available(AnotherDummyPackage)
+        
         sdev = state(AnotherDummyPackage)
         @test sdev.head_tree_hash == th_another
         @test sdev.directory_tree_hash == th_another
