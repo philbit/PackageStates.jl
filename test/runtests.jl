@@ -26,13 +26,17 @@ end
 # would have to define dummy for version < 1.12)
 macro make_loaded_module_available(modulesymbol::Symbol)
     ms = QuoteNode(modulesymbol)
-    return :( $modulesymbol = begin
+    mstr = String(modulesymbol)
+    return :( $(esc(modulesymbol)) = begin
+        foundm = nothing
         for (ps, m) in Base.loaded_modules
             if Symbol(m) == $ms
-                return m
+                foundm = m
+                break;
             end
         end
-        error("Module $(String(modulesymbol)) is not among loaded modules")
+        isnothing(foundm) && error("Module $($mstr) is not among loaded modules")
+        foundm
     end )
 end
 
