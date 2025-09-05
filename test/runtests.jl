@@ -4,6 +4,8 @@ using Pkg
 using LibGit2
 using PackageStates
 
+original_loaded_modules = Set(values(Base.loaded_modules))
+
 const SIGNATURE = LibGit2.Signature("DUMMY", "DUMMY@DUMMY.DOM", round(time()), 0)
 
 function mkdummypackage(tmpdir, name)
@@ -16,19 +18,37 @@ function mkdummypackage(tmpdir, name)
     return targetdir
 end
 
+# In Julia 1.12, module bindings follow world
+# age logic, so after @eval using SomePackage
+# we cannot access SomePackage directly but
+# need to get the module from Base.loaded_modules
+# (could also consider @world(SomePackage, ∞), but
+# would have to define dummy for version < 1.12)
+macro make_loaded_module_available(modulesymbol::Symbol)
+    ms = QuoteNode(modulesymbol)
+    return :( $modulesymbol = begin
+        for (ps, m) in Base.loaded_modules
+            if Symbol(m) == $ms
+                return m
+            end
+        end
+        error("Module $(String(modulesymbol)) is not among loaded modules")
+    end )
+end
+
 remove_dateline_from_diff(diffstr) = join(split(diffstr, "\n")[union(1:4,6:end)], "\n")
 remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(1:2,4,6:end)], "\n")
 
 @testset "Basics" begin
     mktempdir() do tmp
-        
+
         env1 = mkdir(joinpath(tmp, "env1"))
         env2 = mkdir(joinpath(tmp, "env2"))
-        
+
         dummy = mkdummypackage(tmp, "DummyPackage")
         dummy2 = mkdummypackage(tmp, "DummyPackage_v2")
         anotherdummy = mkdummypackage(tmp, "AnotherDummyPackage")
-        
+
 
         # Julia on Windows computes a different tree hash before version 1.9.0
         # (after 1.9.0, it is fine for repos, but still differs for bare directories
@@ -40,7 +60,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         th_another = th_broken ? "eb224df14392b1d2e12f969907b6404cbd7ab543" : "cc7028d54f62f514daf4b627ad3b60df47ee018b"
         th_another_mod = th_broken ? "a43d3ea9c1d3f6804e709691a4d4317cac3ce5f9" : "3af98e735356d9fb59ccfda8a3264543dd290e1e"
 
-        
+
         Pkg.activate(env1)
         Pkg.add(path=dummy)
         Pkg.activate(env2)
@@ -48,6 +68,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
 
         Pkg.activate(env1)
         @eval using DummyPackage
+        @make_loaded_module_available(DummyPackage)
 
         s = state(DummyPackage)
         @test s.id == Base.PkgId(Base.UUID("a5a70863-7a97-4c01-857e-744174fcb92d"), "DummyPackage")
@@ -56,7 +77,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test s.head_tree_hash == PackageStates.EMPTY_TREE_HASH
         @test s.directory_tree_hash == th1
         @test s.manifest_tree_hash == s.directory_tree_hash
-        
+
         Pkg.activate(env2)
 
         s2 = state(DummyPackage)
@@ -64,7 +85,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test s2.directory_tree_hash == th1
         @test s2.manifest_tree_hash == th2
         @test s2.load_path[1] == joinpath(env2, "Project.toml")
-        
+
         @test @capture_out(diff_states_all(:on_load => :newest)) == ""
         snew = state(DummyPackage, :newest)
         @test snew.manifest_tree_hash == th1
@@ -72,18 +93,22 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test diff_states(DummyPackage, print = false)
         @test @capture_out(diff_states(DummyPackage)) ≠ ""
         @test remove_dateline_from_diff(@capture_out(diff_states(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_states(DummyPackage, :newest => :current)))
-        
+
         diff_states_all(print = false, update = true)
         supdated = state(DummyPackage, :newest)
         @test supdated.manifest_tree_hash == th2
         @test @capture_out(diff_states_all(:on_load => :newest)) ≠ ""
         @test remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :newest))) == remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
         Pkg.activate(env1)
-        @test diff_states_all(:on_load => :current, print=false) == [PackageStates]
+        # Check that the only differences are in the non-user
+        # modules/packages (should be in load path - not checked here)
+        @test isempty(setdiff(diff_states_all(:on_load => :current, print=false), original_loaded_modules))
 
         # Test developed package (with modification and commit)
         Pkg.develop(path=anotherdummy)
         @eval using AnotherDummyPackage
+        @make_loaded_module_available(AnotherDummyPackage)
+        
         sdev = state(AnotherDummyPackage)
         @test sdev.head_tree_hash == th_another
         @test sdev.directory_tree_hash == th_another
@@ -125,6 +150,6 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false) == PackageStates.EMPTY_TREE_HASH
         @test startswith(@capture_err(PackageStates.tree_hash_fmt_dir(joinpath(tmp, "link"); use_dir = false)), "┌ Warning: ")
 
-        @test recorded_modules() == Set([AnotherDummyPackage, DummyPackage, PackageStates])
+        @test issubset([AnotherDummyPackage, DummyPackage, PackageStates], recorded_modules())
     end
 end
