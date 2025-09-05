@@ -113,8 +113,9 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test isempty(setdiff(diff_states_all(:on_load => :current, print=false), original_loaded_modules))
 
         # Check that output at least doesn't crash (not seriously validating content currently)
-        @test startswith(@capture_out(display(sbefore)), "\nPackageState of")
-        @test contains(@capture_out(println(sbefore)), "PackageState(")
+        # Note that whitespace is slightly different on Julia 1.10 compared to 1.11 and 1.12, so we strip it here
+        @test startswith(lstrip(@capture_out(display(sbefore))), "PackageState of")
+        @test contains(lstrip(@capture_out(println(sbefore))), "PackageState(")
 
         # Test developed package (with modification and commit)
         Pkg.develop(path=anotherdummy)
