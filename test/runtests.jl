@@ -98,8 +98,12 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         @test @capture_out(diff_states(DummyPackage)) ≠ ""
         @test remove_dateline_from_diff(@capture_out(diff_states(DummyPackage))) == remove_dateline_from_diff(@capture_out(diff_states(DummyPackage, :newest => :current)))
 
+        sbefore = state(DummyPackage, 1)
         diff_states_all(print = false, update = true)
         supdated = state(DummyPackage, :newest)
+        @test supdated ≠ sbefore
+        @test sbefore == state(DummyPackage, 1)
+        @test supdated == state(DummyPackage, 2)
         @test supdated.manifest_tree_hash == th2
         @test @capture_out(diff_states_all(:on_load => :newest)) ≠ ""
         @test remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :newest))) == remove_dateline_and_header_from_diff(@capture_out(diff_states(DummyPackage, :on_load => :current)))
@@ -107,6 +111,10 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         # Check that the only differences are in the non-user
         # modules/packages (should be in load path - not checked here)
         @test isempty(setdiff(diff_states_all(:on_load => :current, print=false), original_loaded_modules))
+
+        # Check that output at least doesn't crash (not seriously validating content currently)
+        @test startswith(@capture_out(display(sbefore)), "\nPackageState of")
+        @test contains(@capture_out(println(sbefore)), "PackageState(")
 
         # Test developed package (with modification and commit)
         Pkg.develop(path=anotherdummy)
