@@ -15,35 +15,38 @@ permissions:
 
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.osarch.os }} - ${{ matrix.osarch.arch }} - ${{ github.event_name }}
+    runs-on: ${{ matrix.osarch.os }}
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
         version:
-          - '1.10'
-          - '1.11'
-          - '1'
-          - 'nightly'
-        os:
-          - ubuntu-latest
-          - macOS-latest
-          - windows-latest
-        arch:
-          - x64
-          - x86
-        exclude:
-          - os: macOS-latest
+          - '1.10' #lower compat bound
+          - '1.11' #change in init behavior
+          - '1.12' #binding partitions with world-age semantics
+          - '1' # latest version 1
+          - 'nightly' #look ahead a bit
+        osarch: # only the right combinations of OS
+          - os: ubuntu-latest
+            arch: x64
+          - os: ubuntu-latest
             arch: x86
+          - os: windows-latest
+            arch: x64
+          - os: windows-latest
+            arch: x86
+          - os: macOS-latest
+            arch: aarch64
+
     steps:
       - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           show-versioninfo: true
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
+          arch: ${{ matrix.osarch.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
