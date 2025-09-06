@@ -60,7 +60,7 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         th_broken = Sys.iswindows() && (Base.VERSION < v"1.9.0-" || Sys.ARCH == :i686) 
         println("Julia Version: ", Base.VERSION)
         println("  on architecture: ", Sys.ARCH)
-        println("  tree has broken: ", th_broken)
+        println("  tree hash broken: ", th_broken)
         th1 = th_broken ? "1bd2b16b793dfbf96aef17385f635729ae32a43c" : "dd574217160ae714ff496b9239a5ae1a4d819aa8"
         th2 = th_broken ? "90ca0b300186580cfe89f5336ec58453257a1ec6" : "98cea5b18356123cda026692eafb1e4a55813dac"
 
@@ -152,7 +152,8 @@ remove_dateline_and_header_from_diff(diffstr) = join(split(diffstr, "\n")[union(
         # it differs from the tree hash of the directory on disk.
         # This test to detect if it ever changes (then the heavy use_dir=false
         # branch could be removed from tree_hash_fmt_dir).
-        th_dir_broken = Sys.iswindows() && !th_broken
+        # On x86 systems, tree hash for repos is broken AND the tree hash differs from that of the directory
+        th_dir_broken = Sys.iswindows() && (!th_broken || Sys.ARCH == :i686)
         if th_dir_broken # could use @test ... broken=th_dir_broken here, but doesn't work on Julia 1.6
             @test PackageStates.tree_hash_fmt_dir(s.dir; use_dir = false) ≠ PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
             @test PackageStates.tree_hash_fmt_dir(dummy; use_dir = false) ≠ PackageStates.tree_hash_fmt_dir(s.dir; use_dir = true)
