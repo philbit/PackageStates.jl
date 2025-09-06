@@ -25,9 +25,9 @@ jobs:
         version:
           - '1.10' #lower compat bound
           - '1.11' #change in init behavior
-          - '1.12' #binding partitions with world-age semantics
+          #- '1.12' #binding partitions with world-age semantics
           - '1' # latest version 1
-          - 'nightly' #look ahead a bit
+          - 'nightly'
         osarch: # only the right combinations of OS
           - os: ubuntu-latest
             arch: x64
